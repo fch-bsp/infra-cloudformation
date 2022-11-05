@@ -12,3 +12,6 @@ Subnets - Private
 
 10.30.6.0/24 254 hosts
 10.30.7.0/24 254 hosts
+
+
+estão ok 
