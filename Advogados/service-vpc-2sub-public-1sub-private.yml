@@ -1,0 +1,244 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Recursos principais da AWS para criar um Infra abrangendo sub-redes públicas e privadas. Apoia
+             balanceadores de carga voltados para o ambiente público e privado 
+Parameters:
+  EnvironmentName:
+    Type: String
+    Default: vpc-Exemplo # Nome da VPC podendo trocar
+
+
+Mappings:
+  SubnetConfig:  #CRIAÇÃO DE 1 VPC COM 5 SUB PUBLIC E 2 SUB PRIVATE 
+    VPC:
+      CIDR: '10.0.0.0/16'  
+    PublicOne:
+      CIDR: '10.0.1.0/24'
+    PublicTwo:
+      CIDR: '10.0.2.0/24'
+    PublicThee:
+      CIDR: '10.0.3.0/24'
+    PublicFour:
+      CIDR: '10.0.4.0/24'
+    PublicFive:
+      CIDR: '10.0.5.0/24'    
+    PrivateOne:
+      CIDR: '10.0.6.0/24'
+    PrivateTwo:
+      CIDR: '10.0.7.0/24'
+#CRIAÇÃO DA VPC 
+Resources:
+  VPC:  
+    Type: AWS::EC2::VPC
+    Properties:
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      CidrBlock: !FindInMap ['SubnetConfig', 'VPC', 'CIDR']
+#CRIAÇÃO DA 1 SUB PUBLIC 1
+  PublicSubnetOne: 
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select
+        - 0
+        - Fn::GetAZs: !Ref 'AWS::Region'
+      VpcId: !Ref 'VPC'
+      CidrBlock: !FindInMap ['SubnetConfig', 'PublicOne', 'CIDR']
+      MapPublicIpOnLaunch: true
+#CRIAÇÃO DA 2 SUB PUBLIC 2
+  PublicSubnetTwo: 
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select
+        - 1
+        - Fn::GetAZs: !Ref 'AWS::Region'
+      VpcId: !Ref 'VPC'
+      CidrBlock: !FindInMap ['SubnetConfig', 'PublicTwo', 'CIDR']
+      MapPublicIpOnLaunch: true
+#CRIAÇÃO DA 1 SUB PUBLIC 3
+  PublicSubnetThee: 
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select
+        - 0
+        - Fn::GetAZs: !Ref 'AWS::Region'
+      VpcId: !Ref 'VPC'
+      CidrBlock: !FindInMap ['SubnetConfig', 'PublicThee', 'CIDR']
+      MapPublicIpOnLaunch: true
+#CRIAÇÃO DA 2 SUB PUBLIC 4      
+  PublicSubnetFour: 
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select
+        - 1
+        - Fn::GetAZs: !Ref 'AWS::Region'
+      VpcId: !Ref 'VPC'
+      CidrBlock: !FindInMap ['SubnetConfig', 'PublicFour', 'CIDR']
+      MapPublicIpOnLaunch: true   
+#CRIAÇÃO DA 2 SUB PUBLIC 5
+  PublicSubnetFive: 
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select
+        - 1
+        - Fn::GetAZs: !Ref 'AWS::Region'
+      VpcId: !Ref 'VPC'
+      CidrBlock: !FindInMap ['SubnetConfig', 'PublicFive', 'CIDR']
+      MapPublicIpOnLaunch: true          
+#CRIAÇÃO DA 1 SUB PRIVATE 1
+  PrivateSubnetOne:  
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select
+        - 0
+        - Fn::GetAZs: !Ref 'AWS::Region'
+      VpcId: !Ref 'VPC'
+      CidrBlock: !FindInMap ['SubnetConfig', 'PrivateOne', 'CIDR']
+#CRIAÇÃO DA 2 SUB PRIVATE 2
+  PrivateSubnetTwo:  
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select
+        - 1
+        - Fn::GetAZs: !Ref 'AWS::Region'
+      VpcId: !Ref 'VPC'
+      CidrBlock: !FindInMap ['SubnetConfig', 'PrivateTwo', 'CIDR']
+#CRIAÇÃO DA DO IG 
+  InternetGateway:  
+    Type: AWS::EC2::InternetGateway
+  GatewayAttachement:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref 'VPC'
+      InternetGatewayId: !Ref 'InternetGateway'
+ #CRIAÇÃO DO RT
+  PublicRouteTable: 
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref 'VPC'
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: GatewayAttachement
+    Properties:
+      RouteTableId: !Ref 'PublicRouteTable'
+      DestinationCidrBlock: '0.0.0.0/0'
+      GatewayId: !Ref 'InternetGateway'  
+# CRIANDO ROTA E APONTANDO PARA O IG !REF 
+  PublicSubnetOneRouteTableAssociation:  
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: # APONTAMENTO RT PARA SUB 1 PUBLIC
+      SubnetId: !Ref PublicSubnetOne 
+      RouteTableId: !Ref PublicRouteTable
+# CRIANDO ROTA E APONTANDO PARA O IG !REF 
+  PublicSubnetTwoRouteTableAssociation:  
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: # APONTAMENTO RT PARA SUB 2 PUBLIC
+      SubnetId: !Ref PublicSubnetTwo  
+      RouteTableId: !Ref PublicRouteTable
+# CRIANDO ROTA E APONTANDO PARA O IG !REF 
+  PublicSubnetTheeRouteTableAssociation:  
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: #APONTAMENTO RT PARA SUB 3 PUBLIC
+      SubnetId: !Ref PublicSubnetThee
+      RouteTableId: !Ref PublicRouteTable
+# CRIANDO ROTA E APONTANDO PARA O IG !REF 
+  PublicSubnetFourRouteTableAssociation:  
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: #APONTAMENTO RT PARA SUB 4 PUBLIC
+      SubnetId: !Ref PublicSubnetFour  
+      RouteTableId: !Ref PublicRouteTable
+# CRIANDO ROTA E APONTANDO PARA O IG !REF
+  PublicSubnetFiveRouteTableAssociation: 
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:  #APONTAMENTO RT PARA SUB 5 PUBLIC
+      SubnetId: !Ref PublicSubnetFive
+      RouteTableId: !Ref PublicRouteTable         
+#CRIAÇÃO DO RECURSO Nat 1
+  NatGatewayOneAttachment:  
+    Type: AWS::EC2::EIP
+    DependsOn: GatewayAttachement
+    Properties:
+        Domain: vpc
+#CRIAÇÃO DO RECURSO Nat 2
+  NatGatewayTwoAttachment:  
+    Type: AWS::EC2::EIP
+    DependsOn: GatewayAttachement
+    Properties:
+        Domain: vpc
+ # ATACH DO RECURSO Nat 1 sub-01 
+  NatGatewayOne: 
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatGatewayOneAttachment.AllocationId
+      SubnetId: !Ref PublicSubnetOne 
+ # ATACH DO RECURSO Nat 2 sub-02
+  NatGatewayTwo:  
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatGatewayTwoAttachment.AllocationId
+      SubnetId: !Ref PublicSubnetTwo 
+ #CRIAÇÃO DE UM RT PARA AS SUB PRIVATE
+  PrivateRouteTableOne: 
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref 'VPC'
+#CRIAÇÃO DE UM RT PARA AS SUB PRIVATE
+  PrivateRouteOne: 
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTableOne  #ATACH NA SUB 1 PRIVATE
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGatewayOne
+#atach na sub private 1
+  PrivateRouteTableOneAssociation:  
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateRouteTableOne
+      SubnetId: !Ref PrivateSubnetOne
+ #atach na sub private 2
+  PrivateRouteTableTwo: 
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref 'VPC'
+#ATACH NA SUB 2 PRIVATE
+  PrivateRouteTwo:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTableTwo  
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGatewayTwo
+#ass NA SUB 2 PRIVATE
+  PrivateRouteTableTwoAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateRouteTableTwo
+      SubnetId: !Ref PrivateSubnetTwo
+
+
+######################################  ########################################  #####################################
+Outputs:
+  VpcId:
+    Description: O ID da VPC em que esta stack está implantada
+    Value: !Ref 'VPC'  # UMA VPC
+  PublicSubnetOne:
+    Description: Public subnet one    #SUB PUBLIC
+    Value: !Ref 'PublicSubnetOne'
+  PublicSubnetTwo:
+    Description: Public subnet two    #SUB PUBLIC
+    Value: !Ref 'PublicSubnetTwo'
+  PublicSubnetThee:
+    Description: Public subnet thee    #SUB PUBLIC
+    Value: !Ref 'PublicSubnetThee'
+  PublicSubnetFour:
+    Description: Public subnet four    #SUB PUBLIC
+    Value: !Ref 'PublicSubnetFour'
+  PublicSubnetFive:
+    Description: Public subnet five    #SUB PUBLIC
+    Value: !Ref 'PublicSubnetFive'        
+  PrivateSubnetOne:
+    Description: Private subnet one   #SUB PRIVATE
+    Value: !Ref 'PrivateSubnetOne'
+  PrivateSubnetTwo:
+    Description: Private subnet two   #SUB PRIVATE
+    Value: !Ref 'PrivateSubnetTwo'
+  
+  
+
